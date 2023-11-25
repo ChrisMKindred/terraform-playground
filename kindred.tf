@@ -61,4 +61,17 @@ module "ec2_app" {
   instance_size             = "t2.micro"
   instance_ami              = data.aws_ami.app.id
   instance_root_device_size = 12 # Optional
+  subnets                   = keys(module.vpc.vpc_public_subnets)
+  security_groups           = ["sg-0adbfe277a8b25e33"]
+  tags = {
+    Name = "kindred-${var.infra_env}-app"
+  }
+  create_eip = true
+}
+
+module "vpc" {
+  source = "./modules/vpc"
+
+  infra_env = var.infra_env
+  vpc_cidr  = "10.0.0.0/18"
 }
