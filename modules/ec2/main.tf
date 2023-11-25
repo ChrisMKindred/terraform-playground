@@ -8,7 +8,7 @@ resource "aws_instance" "kindred_web" {
   }
  
   tags = {
-    Name        = "kindred-${var.infra_env}-web"
+    Name        = "kindred-${var.infra_env}-${var.infra_role}" 
     Role        = var.infra_role
     Project     = "kindred.dev"
     Environment = var.infra_env
@@ -26,7 +26,7 @@ resource "aws_eip" "kindred_addr" {
   }
  
   tags = {
-    Name        = "kindred-${var.infra_env}-web-address"
+    Name        = "kindred-${var.infra_env}-${var.infra_role}-address"
     Role        = var.infra_role
     Project     = "kindred.dev"
     Environment = var.infra_env
