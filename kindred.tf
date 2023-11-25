@@ -7,10 +7,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "terraform-state-kindred"
-    key            = "kindred/terraform.tfstate"
-    region         = "us-east-1"
-    profile        = "kindred"
+    bucket  = "terraform-state-kindred"
+    key     = "kindred/terraform.tfstate"
+    region  = "us-east-1"
+    profile = "kindred"
+    # Used to lock file updates when sharing with multiple poeple. 
     dynamodb_table = "terraform-state-kindred"
   }
 }
@@ -31,70 +32,33 @@ variable "default_region" {
   default     = "us-east-1"
 }
 
-variable "instance_size" {
-  type        = string
-  description = "ec2 web server size"
-  default     = "t2.micro"
+data "aws_ami" "app" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+
+  owners = ["099720109477"] # canonical official
 }
 
-# data "aws_ami" "app" {
-#   most_recent = true
+module "ec2_app" {
+  source = "./modules/ec2"
 
-#   filter {
-#     name   = "image-id"
-#     values = ["ami-0fc5d935ebf8bc3bc"]
-#   }
-
-#   filter {
-#     name   = "virtualization-type"
-#     values = ["hvm"]
-#   }
-
-#   filter {
-#     name   = "architecture"
-#     values = ["x86_64"]
-#   }
-
-#   owners = ["099720109477"] # canonical official
-# }
-
-resource "aws_instance" "kindred_web" {
-  ami           = "ami-0fc5d935ebf8bc3bc"
-  instance_type = var.instance_size
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  root_block_device {
-    volume_size = 8 # GB
-    volume_type = "gp3"
-  }
-
-  tags = {
-    Name        = "kindred-${var.infra_env}-web"
-    Project     = "kindred.io"
-    Environment = var.infra_env
-    ManagedBy   = "terraform"
-  }
-}
-
-resource "aws_eip" "app_eip" {
-  vpc = true
-
-  lifecycle {
-    prevent_destroy = true
-  }
-
-  tags = {
-    Name        = "kindred-${var.infra_env}-web-address"
-    Project     = "kindred.io"
-    Environment = "staging"
-    ManagedBy   = "terraform"
-  }
-}
-
-resource "aws_eip_association" "app_eip_assoc" {
-  instance_id   = aws_instance.kindred_web.id
-  allocation_id = aws_eip.app_eip.id
+  infra_env                 = var.infra_env
+  infra_role                = "app"
+  instance_size             = "t2.micro"
+  instance_ami              = data.aws_ami.app.id
+  instance_root_device_size = 12 # Optional
 }
