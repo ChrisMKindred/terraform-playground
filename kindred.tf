@@ -62,7 +62,8 @@ module "ec2_app" {
   instance_ami              = data.aws_ami.app.id
   instance_root_device_size = 12 # Optional
   subnets                   = keys(module.vpc.vpc_public_subnets)
-  security_groups           = ["sg-0adbfe277a8b25e33"]
+  security_groups           = [module.vpc.security_group_public] 
+
   tags = {
     Name = "kindred-${var.infra_env}-app"
   }
